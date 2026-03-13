@@ -165,10 +165,16 @@ docker pull ghcr.io/betterleaks/betterleaks:latest
 betterleaks dir .
 ```
 
+```bash
+betterleaks git -v
+```
+
 Export SARIF report:
 
 ```bash
-betterleaks dir . --report-format sarif --report-path betterleaks.sarif
+betterleaks git . --report-format sarif --report-path ./betterleaks.sarif -v
+echo $?
+ls -l ./betterleaks.sarif
 ```
 
 ---
@@ -223,21 +229,21 @@ irm https://raw.githubusercontent.com/opengrep/opengrep/main/install.ps1 | iex
 ## Download Rules
 
 ```bash
-git clone https://github.com/semgrep/semgrep-rules.git
+git clone https://github.com/opengrep/opengrep-rules
 ```
-
+ 
 ---
 
 ## Run Local Scan
 
 ```bash
-opengrep scan -f semgrep-rules .
+opengrep scan -f opengrep-rules .
 ```
 
 Export SARIF:
 
 ```bash
-opengrep scan --sarif-output=opengrep.sarif -f semgrep-rules .
+opengrep scan --sarif-output=opengrep.sarif -f opengrep-rules .
 ```
 
 ---
@@ -257,18 +263,26 @@ jobs:
   scan:
     runs-on: ubuntu-latest
     permissions:
+      contents: read
       security-events: write
 
     steps:
       - uses: actions/checkout@v4
 
-      - run: curl -fsSL https://raw.githubusercontent.com/opengrep/opengrep/main/install.sh | bash
+      - name: Install Opengrep
+        run: |
+          curl -fsSL https://raw.githubusercontent.com/opengrep/opengrep/main/install.sh | bash
+          echo "$HOME/.opengrep/cli/latest" >> "$GITHUB_PATH"
 
-      - run: |
-          git clone https://github.com/semgrep/semgrep-rules.git
-          opengrep scan --sarif-output=opengrep.sarif -f semgrep-rules .
+      - name: Run Opengrep
+        run: |
+          opengrep scan \
+            -f opengrep-rules \
+            --sarif-output=opengrep.sarif \
+            .
 
-      - uses: github/codeql-action/upload-sarif@v4
+      - name: Upload SARIF
+        uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: opengrep.sarif
 ```
@@ -355,6 +369,7 @@ cd django-DefectDojo
 docker compose build
 docker/setEnv.sh release
 docker compose up
+docker compose logs initializer | grep "Admin password"
 ```
 
 Open:
