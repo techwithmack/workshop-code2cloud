@@ -1,162 +1,435 @@
-# NodeGoat
+# Open Source AppSec Workshop Cheat Sheet
 
-Being lightweight, fast, and scalable, Node.js is becoming a widely adopted platform for developing web applications. This project provides an environment to learn how OWASP Top 10 security risks apply to web applications developed using Node.js and how to effectively address them.
+This workshop demonstrates **how to secure applications using open source tools**.  
+The goal is **not** to build a full AppSec program, but to show what is available and how it works.
 
-## Getting Started
+We will cover three stages of security:
 
-OWASP Top 10 for Node.js web applications:
+1. **Local Scanning** – run security tools against a local repo  
+2. **Active Blockers** – stop issues before they enter the repo  
+3. **CI Scanning** – automate security checks using GitHub Actions  
+4. **Security Dashboard** – import results into **DefectDojo**
 
-### Know it!
+Tools used in this workshop:
 
-This application bundled a tutorial page that explains the OWASP Top 10 vulnerabilities and how to fix them.
+- **Trivy** – Vulnerable dependency scanning
+- **SafeChain** – Malware protection for dependencies
+- **BetterLeaks** – Secret detection
+- **Aikido Pre-Commit** – Secret blocking at commit time
+- **Opengrep** – SAST scanning
+- **Checkov** – Infrastructure as Code scanning
+- **DefectDojo** – Security findings dashboard
 
-Once the application is running, you can access the tutorial page at [http://localhost:4000/tutorial](http://localhost:4000/tutorial) (or the port you have configured).
+---
 
-### Do it!
+# Trivy – Dependency Vulnerability Scanning
 
-[A Vulnerable Node.js App for Ninjas](http://nodegoat.herokuapp.com/) to exploit, toast, and fix. You may like to [set up your own copy](#how-to-set-up-your-copy-of-nodegoat) of the app to fix and test vulnerabilities. Hint: Look for comments in the source code.
+## Install
 
-##### Default user accounts
+### Mac
 
-The database comes pre-populated with these user accounts created as part of the seed data -
-* Admin Account - u:`admin` p:`Admin_123`
-* User Accounts (u:`user1` p:`User1_123`), (u:`user2` p:`User2_123`)
-* New users can also be added using the sign-up page.
+```bash
+brew install trivy
+```
 
-## How to Set Up Your Copy of NodeGoat
+### Windows
 
-### OPTION 1 - Run NodeGoat on your machine
+Download from:
 
-1) Install [Node.js](http://nodejs.org/) - NodeGoat requires Node v8 or above
+https://github.com/aquasecurity/trivy/releases
 
-2) Clone the github repository:
-   ```
-   git clone https://github.com/OWASP/NodeGoat.git
-   ```
+Add the binary to your PATH.
 
-3) Go to the directory:
-   ```
-   cd NodeGoat
-   ```
+---
 
-4) Install node packages:
-   ```
-   npm install
-   ```
+## Run Local Scan
 
-5) Set up MongoDB. You can either install MongoDB locally or create a remote instance:
+Scan the current repository:
 
-   * Using local MongoDB:
-     1) Install [MongoDB Community Server](https://docs.mongodb.com/manual/administration/install-community/)
-     2) Start [mongod](http://docs.mongodb.org/manual/reference/program/mongod/#bin.mongod)
+```bash
+trivy repo .
+```
 
-   * Using remote MongoDB instance:
-     1) [Deploy a MongoDB Atlas free tier cluster](https://docs.atlas.mongodb.com/tutorial/deploy-free-tier-cluster/) (M0 Sandbox)
-     2) [Enable network access](https://docs.atlas.mongodb.com/security/add-ip-address-to-list/) to the cluster from your current IP address
-     3) [Add a database user](https://docs.atlas.mongodb.com/tutorial/create-mongodb-user-for-cluster/) to the cluster
-     4) Set the `MONGODB_URI` environment variable to the connection string of your cluster, which can be viewed in the cluster's
-        [connect dialog](https://docs.atlas.mongodb.com/tutorial/connect-to-your-cluster/#connect-to-your-atlas-cluster). Select "Connect your application",
-        set the driver to "Node.js" and the version to "2.2.12 or later". This will give a connection string in the form:
-        ```
-        mongodb://<username>:<password>@<cluster>/<dbname>?ssl=true&replicaSet=<rsname>&authSource=admin&retryWrites=true&w=majority
-        ```
-        The `<username>` and `<password>` fields need filling in with the details of the database user added earlier. The `<dbname>` field sets the name of the
-        database nodegoat will use in the cluster (eg "nodegoat"). The other fields will already be filled in with the correct details for your cluster.
+Export results for DefectDojo:
 
-6) Populate MongoDB with the seed data required for the app:
-   ```
-   npm run db:seed
-   ```
-   By default this will use the "development" configuration, but the desired config can be passed as an argument if required.
+```bash
+trivy repo . --format json --output trivy.json
+```
 
-7) Start the server. You can run the server using node or nodemon:
-   * Start the server with node. This starts the NodeGoat application at [http://localhost:4000/](http://localhost:4000/):
-     ```
-     npm start
-     ```
-   * Start the server with nodemon, which will automatically restart the application when you make any changes. This starts the NodeGoat application at [http://localhost:5000/](http://localhost:5000/):
-     ```
-     npm run dev
-     ```
+---
 
-#### Customizing the Default Application Configuration
+## GitHub Action
 
-By default the application will be hosted on port 4000 and will connect to a MongoDB instance at localhost:27017. To change this set the environment variables `PORT` and `MONGODB_URI`.
+Create `.github/workflows/trivy.yml`
 
-Other settings can be changed by updating the [config file](https://github.com/OWASP/NodeGoat/blob/master/config/env/all.js).
+```yaml
+name: trivy
 
-### OPTION 2 - Run NodeGoat on Docker
+on:
+  push:
+  pull_request:
 
-The repo includes the Dockerfile and docker-compose.yml necessary to set up the app and db instance, then connect them together.
+jobs:
+  trivy:
+    runs-on: ubuntu-latest
 
-1) Install [docker](https://docs.docker.com/installation/) and [docker compose](https://docs.docker.com/compose/install/) 
+    steps:
+      - uses: actions/checkout@v4
 
-2) Clone the github repository:
-   ```
-   git clone https://github.com/OWASP/NodeGoat.git
-   ```
+      - name: Run Trivy
+        uses: aquasecurity/trivy-action@0.33.1
+        with:
+          scan-type: fs
+          scan-ref: .
+          format: json
+          output: trivy.json
 
-3) Go to the directory:
-   ```
-   cd NodeGoat
-   ```
+      - uses: actions/upload-artifact@v4
+        with:
+          name: trivy-report
+          path: trivy.json
+```
 
-4) Build the images:
-   ```
-   docker-compose build
-   ```
+---
 
-5) Run the app, this starts the NodeGoat application at http://localhost:4000/:
-   ```
-   docker-compose up
-   ```
+# SafeChain – Block Malware in Dependencies
 
-### OPTION 3 - Deploy to Heroku
+SafeChain protects your dependency installs.
 
-This option uses a free ($0/month) Heroku node server.
+## Install
 
-Though not essential, it is recommended that you fork this repository and deploy the forked repo.
-This will allow you to fix vulnerabilities in your own forked version, then deploy and test it on Heroku.
+### Mac / Linux
 
-1) Set up a publicly accessible MongoDB instance:
-   1) [Deploy a MongoDB Atlas free tier cluster](https://docs.atlas.mongodb.com/tutorial/deploy-free-tier-cluster/) (M0 Sandbox)
-   2) [Enable network access](https://docs.atlas.mongodb.com/security/ip-access-list/#add-ip-access-list-entries) to the cluster from anywhere (CIDR range 0.0.0.0/0)
-   3) [Add a database user](https://docs.atlas.mongodb.com/tutorial/create-mongodb-user-for-cluster/) to the cluster
+```bash
+curl -fsSL https://github.com/AikidoSec/safe-chain/releases/latest/download/install-safe-chain.sh | sh
+```
 
-2) Deploy NodeGoat to Heroku by clicking the button below:
+### Windows
 
-   [![Deploy](https://www.herokucdn.com/deploy/button.png)](https://heroku.com/deploy)
+```powershell
+iex (iwr "https://github.com/AikidoSec/safe-chain/releases/latest/download/install-safe-chain.ps1" -UseBasicParsing)
+```
 
-   In the Create New App dialog, set the `MONGODB_URI` config var to the connection string of your MongoDB Atlas cluster.
-   This can be viewed in the cluster's [connect dialog](https://docs.atlas.mongodb.com/tutorial/connect-to-your-cluster/#connect-to-your-atlas-cluster).
-   Select "Connect your application", set the driver to "Node.js" and the version to "2.2.12 or later".
-   This will give a connection string in the form:
-   ```
-   mongodb://<username>:<password>@<cluster>/<dbname>?ssl=true&replicaSet=<rsname>&authSource=admin&retryWrites=true&w=majority
-   ```
-   The `<username>` and `<password>` fields need filling in with the details of the database user added earlier. The `<dbname>` field sets the name of the
-   database nodegoat will use in the cluster (eg "nodegoat"). The other fields will already be filled in with the correct details for your cluster.
+Restart your terminal after install.
 
-## Report bugs, Feedback, Comments
+---
 
-*  Open a new [issue](https://github.com/OWASP/NodeGoat/issues) or contact team by joining chat at [Slack](https://owasp.slack.com/messages/project-nodegoat/) or [![Join the chat at https://gitter.im/OWASP/NodeGoat](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/OWASP/NodeGoat?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+## Test SafeChain
 
-## Contributing
+Verify installation:
 
-Please Follow [the contributing guide](CONTRIBUTING.md)
+```bash
+npm safe-chain-verify
+```
 
-## Code Of Conduct (CoC)
+Test malware blocking:
 
-This project is bound by a [Code of Conduct](CODE_OF_CONDUCT.md).
+```bash
+npm install safe-chain-test
+```
 
-## Contributors
+If SafeChain works, the install will be blocked.
 
-Here are the amazing [contributors](https://github.com/OWASP/NodeGoat/graphs/contributors) to the NodeGoat project.
+---
 
-## Supports
+# Secrets Detection
 
-- Thanks to JetBrains for providing licenses to fantastic [WebStorm IDE](https://www.jetbrains.com/webstorm/) to build this project.
+## Install BetterLeaks
 
-## License
+### Mac
 
-Code licensed under the [Apache License v2.0.](http://www.apache.org/licenses/LICENSE-2.0)
+```bash
+brew install betterleaks
+```
+
+### Windows (Docker)
+
+```bash
+docker pull ghcr.io/betterleaks/betterleaks:latest
+```
+
+---
+
+## Run Local Scan
+
+```bash
+betterleaks dir .
+```
+
+Export SARIF report:
+
+```bash
+betterleaks dir . --report-format sarif --report-path betterleaks.sarif
+```
+
+---
+
+## Install Aikido Git Hook
+
+This blocks secrets **before commits**.
+
+### Mac / Linux
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/AikidoSec/pre-commit/main/installation-samples/install-global/install-aikido-hook.sh | bash
+```
+
+### Windows
+
+```powershell
+iex (iwr "https://raw.githubusercontent.com/AikidoSec/pre-commit/main/installation-samples/install-global/install-aikido-hook.ps1" -UseBasicParsing)
+```
+
+Test it:
+
+```bash
+git add file.js
+git commit -m "test"
+```
+
+If a secret is detected, the commit will be blocked.
+
+---
+
+# SAST – Static Application Security Testing
+
+We use **Opengrep**, an open source fork of Semgrep.
+
+## Install Opengrep
+
+### Mac / Linux
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/opengrep/opengrep/main/install.sh | bash
+```
+
+### Windows
+
+```powershell
+irm https://raw.githubusercontent.com/opengrep/opengrep/main/install.ps1 | iex
+```
+
+---
+
+## Download Rules
+
+```bash
+git clone https://github.com/semgrep/semgrep-rules.git
+```
+
+---
+
+## Run Local Scan
+
+```bash
+opengrep scan -f semgrep-rules .
+```
+
+Export SARIF:
+
+```bash
+opengrep scan --sarif-output=opengrep.sarif -f semgrep-rules .
+```
+
+---
+
+## GitHub Action
+
+Create `.github/workflows/opengrep.yml`
+
+```yaml
+name: opengrep
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - run: curl -fsSL https://raw.githubusercontent.com/opengrep/opengrep/main/install.sh | bash
+
+      - run: |
+          git clone https://github.com/semgrep/semgrep-rules.git
+          opengrep scan --sarif-output=opengrep.sarif -f semgrep-rules .
+
+      - uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: opengrep.sarif
+```
+
+---
+
+# IaC Security – Checkov
+
+Checkov scans Terraform, CloudFormation, Kubernetes and more.
+
+## Install
+
+### Mac
+
+```bash
+brew install checkov
+```
+
+### Windows
+
+```bash
+pip install checkov
+```
+
+---
+
+## Run Local Scan
+
+```bash
+checkov -d .
+```
+
+Export JSON for DefectDojo:
+
+```bash
+checkov -d . -o json > checkov.json
+```
+
+---
+
+## GitHub Action
+
+Create `.github/workflows/checkov.yml`
+
+```yaml
+name: checkov
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: bridgecrewio/checkov-action@v12
+        with:
+          directory: .
+          output_format: sarif
+          output_file_path: results.sarif
+
+      - uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: results.sarif
+```
+
+---
+
+# DefectDojo – Security Dashboard
+
+Now that we have scan results, we can import them into **DefectDojo**.
+
+## Install DefectDojo
+
+```bash
+git clone https://github.com/DefectDojo/django-DefectDojo.git
+cd django-DefectDojo
+
+docker compose build
+docker/setEnv.sh release
+docker compose up
+```
+
+Open:
+
+```
+http://localhost:8080
+```
+
+Login:
+
+```
+user: admin
+```
+
+Password is printed in the initializer container logs.
+
+---
+
+# Add Local Trivy Scan to DefectDojo
+
+1. Create Product  
+2. Create Engagement  
+3. Click **Import Scan**
+
+Upload:
+
+```
+trivy.json
+```
+
+Scan Type:
+
+```
+Trivy Scan
+```
+
+---
+
+# Send GitHub Action Results to DefectDojo
+
+Example step after scans complete:
+
+```yaml
+- name: Upload to DefectDojo
+  run: |
+    curl -X POST "$DEFECTDOJO_URL/api/v2/import-scan/" \
+    -H "Authorization: Token $DD_TOKEN" \
+    -F "file=@trivy.json" \
+    -F "scan_type=Trivy Scan" \
+    -F "engagement=$DD_ENGAGEMENT_ID"
+```
+
+Environment variables required:
+
+```
+DEFECTDOJO_URL
+DD_TOKEN
+DD_ENGAGEMENT_ID
+```
+
+---
+
+# Summary
+
+This workshop demonstrates a **simple open source AppSec pipeline**.
+
+### Local Scanning
+
+- Trivy
+- BetterLeaks
+- Opengrep
+- Checkov
+
+### Prevention
+
+- SafeChain
+- Aikido Git Hooks
+
+### CI Automation
+
+- GitHub Actions
+
+### Security Dashboard
+
+- DefectDojo
+
+Together these tools provide a lightweight but powerful **open source security stack for modern development**.
