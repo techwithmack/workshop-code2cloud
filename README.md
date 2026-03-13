@@ -72,17 +72,26 @@ on:
 jobs:
   trivy:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
 
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install Trivy
+        uses: aquasecurity/setup-trivy@e07451d2e059ed86c2870430ea286b3a9e0bf241
+        with:
+          version: v0.68.2
+          cache: true
+
       - name: Run Trivy
-        uses: aquasecurity/trivy-action@0.33.1
+        uses: aquasecurity/trivy-action@0.35.0
         with:
           scan-type: fs
           scan-ref: .
           format: json
           output: trivy.json
+          skip-setup-trivy: true
 
       - uses: actions/upload-artifact@v4
         with:
@@ -424,7 +433,7 @@ This workshop demonstrates a **simple open source AppSec pipeline**.
 - SafeChain
 - Aikido Git Hooks
 
-### CI Automation
+### CI Automation 
 
 - GitHub Actions
 
