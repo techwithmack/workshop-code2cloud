@@ -19,11 +19,12 @@ jobs:
           curl -fsSL https://raw.githubusercontent.com/opengrep/opengrep/main/install.sh | bash
           echo "$HOME/.opengrep/cli/latest" >> "$GITHUB_PATH"
 
-      - name: Download rules
-        run: git clone --depth 1 https://github.com/semgrep/semgrep-rules.git
-
       - name: Run Opengrep
-        run: opengrep scan --sarif-output=opengrep.sarif -f semgrep-rules .
+        run: |
+          opengrep scan \
+            -f opengrep-rules \
+            --sarif-output=opengrep.sarif \
+            .
 
       - name: Upload SARIF
         uses: github/codeql-action/upload-sarif@v4
