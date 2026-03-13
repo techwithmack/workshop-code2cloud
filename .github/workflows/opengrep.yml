@@ -8,17 +8,24 @@ jobs:
   scan:
     runs-on: ubuntu-latest
     permissions:
+      contents: read
       security-events: write
 
     steps:
       - uses: actions/checkout@v4
 
-      - run: curl -fsSL https://raw.githubusercontent.com/opengrep/opengrep/main/install.sh | bash
+      - name: Install Opengrep
+        run: |
+          curl -fsSL https://raw.githubusercontent.com/opengrep/opengrep/main/install.sh | bash
+          echo "$HOME/.opengrep/cli/latest" >> "$GITHUB_PATH"
 
-      - run: |
-          git clone https://github.com/semgrep/semgrep-rules.git
-          opengrep scan --sarif-output=opengrep.sarif -f semgrep-rules .
+      - name: Download rules
+        run: git clone --depth 1 https://github.com/semgrep/semgrep-rules.git
 
-      - uses: github/codeql-action/upload-sarif@v4
+      - name: Run Opengrep
+        run: opengrep scan --sarif-output=opengrep.sarif -f semgrep-rules .
+
+      - name: Upload SARIF
+        uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: opengrep.sarif
