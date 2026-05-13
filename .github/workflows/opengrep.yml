@@ -1,22 +1,17 @@
-name: Opengrep Local Rules Scan
+name: Opengrep
 
 on:
   pull_request: {}
   push:
     branches: [main]
-  # Allows you to run this scan manually from the GitHub UI
-  workflow_dispatch: {} 
+  workflow_dispatch: {}
 
 jobs:
   opengrep:
-    name: Run Opengrep
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
+      - uses: actions/checkout@v4
       - name: Install Opengrep
         run: curl -fsSL https://raw.githubusercontent.com/opengrep/opengrep/main/install.sh | bash
-
       - name: Run Opengrep
-        run: $HOME/.opengrep/cli/latest/opengrep scan --config .opengrep-rules/
+        run: $HOME/.local/bin/opengrep scan --config auto
