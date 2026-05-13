@@ -1,27 +1,27 @@
-name: trivy
+name: Trivy Dependency & IaC Scan
 
 on:
   push:
-  pull_request:
+    branches: [main]
+  pull_request: {}
+  workflow_dispatch: {}
 
 jobs:
-  trivy:
+  trivy-scan:
+    name: Scan Dependencies
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      - name: Run Trivy
-        uses: aquasecurity/trivy-action@0.35.0
+      - name: Run Trivy Scan
+        # Use v0.36.0 or higher (with the 'v' prefix) for safety
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
-          scan-type: fs
-          scan-ref: .
-          format: json
-          output: trivy.json
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: trivy-report
-          path: trivy.json
+          # 'fs' scans the filesystem for package.json, go.mod, Dockerfiles, etc.
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'table'
+          # Only show things that actually have a fix available to reduce noise
+          ignore-unfixed: true
+          severity: 'HIGH,CRITICAL'
