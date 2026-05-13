@@ -1,0 +1,25 @@
+name: Betterleaks Secret Scan
+
+on:
+  push:
+    branches: [main]
+  pull_request: {}
+  workflow_dispatch: {}
+
+jobs:
+  betterleaks-scan:
+    name: Scan for Secrets
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          # Crucial: Fetch all history so Betterleaks can scan every commit
+          fetch-depth: 0
+
+      - name: Run Betterleaks
+        # This uses the official Aikido Security action for Betterleaks
+        uses: AikidoSec/betterleaks-action@v1
+        with:
+          # 'detect' scans the whole repo; '--redact' hides secrets in logs
+          args: detect --redact -v
