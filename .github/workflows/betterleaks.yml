@@ -14,12 +14,15 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          # Crucial: Fetch all history so Betterleaks can scan every commit
+          # Still important: Fetch history so 'git mode' works
           fetch-depth: 0
 
       - name: Run Betterleaks
-        # This uses the official Aikido Security action for Betterleaks
-        uses: AikidoSec/betterleaks-action@v1
+        uses: dortort/betterleaks-action@v0.1.0
         with:
-          # 'detect' scans the whole repo; '--redact' hides secrets in logs
-          args: detect --redact -v
+          # Required for the action to pull the binary and run
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          # Shows exactly what it found in the logs
+          verbose: 'true'
+          # Hides the actual secrets in the logs so you don't leak them again
+          redact: 'true'
