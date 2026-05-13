@@ -18,6 +18,5 @@ jobs:
       - name: Install Opengrep
         run: curl -fsSL https://raw.githubusercontent.com/opengrep/opengrep/main/install.sh | bash
 
-      - name: Run Opengrep Scan
-        # Using the absolute path for safety, and pointing to your local rules folder
-        run: $HOME/.local/bin/opengrep scan --config .opengrep-rules/
+- name: Run Opengrep
+        run: $HOME/.opengrep/cli/latest/opengrep scan --config .opengrep-rules/
