@@ -1,24 +1,23 @@
-name: OpenGrep Local Rules Scan
+name: Opengrep Local Rules Scan
 
 on:
+  pull_request: {}
   push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+    branches: [main]
+  # Allows you to run this scan manually from the GitHub UI
+  workflow_dispatch: {} 
 
 jobs:
-  opengrep-scan:
-    name: Run OpenGrep
+  opengrep:
+    name: Run Opengrep
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install OpenGrep
-        run: |
-          curl -fsSL https://raw.githubusercontent.com/opengrep/opengrep/main/install.sh | bash
+      - name: Install Opengrep
+        run: curl -fsSL https://raw.githubusercontent.com/opengrep/opengrep/main/install.sh | bash
 
-      - name: Run OpenGrep Scan
-        # Scans the repo using local rules and prints findings directly to the GitHub Action log
-        run: |
-          opengrep scan --config .opengrep-rules/
+      - name: Run Opengrep Scan
+        # Using the absolute path for safety, and pointing to your local rules folder
+        run: $HOME/.local/bin/opengrep scan --config .opengrep-rules/
