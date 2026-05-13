@@ -1,32 +1,24 @@
-name: opengrep
+name: OpenGrep Local Rules Scan
 
 on:
   push:
+    branches: [ "main" ]
   pull_request:
+    branches: [ "main" ]
 
 jobs:
-  scan:
+  opengrep-scan:
+    name: Run OpenGrep
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      security-events: write
-
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - name: Install Opengrep
+      - name: Install OpenGrep
         run: |
           curl -fsSL https://raw.githubusercontent.com/opengrep/opengrep/main/install.sh | bash
-          echo "$HOME/.opengrep/cli/latest" >> "$GITHUB_PATH"
 
-      - name: Run Opengrep
+      - name: Run OpenGrep Scan
+        # Scans the repo using local rules and prints findings directly to the GitHub Action log
         run: |
-          opengrep scan \
-            -f opengrep-rules \
-            --sarif-output=opengrep.sarif \
-            .
-
-      - name: Upload SARIF
-        uses: github/codeql-action/upload-sarif@v4
-        with:
-          sarif_file: opengrep.sarif
+          opengrep scan --config .opengrep-rules/
