@@ -1,0 +1,11 @@
+- name: Harden Runner
+        uses: step-security/harden-runner@v2
+        with:
+          egress-policy: block
+          allowed-endpoints: >
+            github.com:443
+            api.github.com:443
+            raw.githubusercontent.com:443
+            index.docker.io:443
+            registry-1.docker.io:443
+            auth.docker.io:443
