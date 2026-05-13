@@ -10,8 +10,11 @@ jobs:
   opengrep:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
+      
       - name: Install Opengrep
         run: curl -fsSL https://raw.githubusercontent.com/opengrep/opengrep/main/install.sh | bash
+        
       - name: Run Opengrep
-        run: $HOME/.local/bin/opengrep scan --config auto
+        # This uses the correct path from your logs!
+        run: $HOME/.opengrep/cli/latest/opengrep scan --config auto
