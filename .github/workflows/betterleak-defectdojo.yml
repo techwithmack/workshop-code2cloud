@@ -1,0 +1,42 @@
+name: Betterleaks Secret Scan
+
+on:
+  push:
+    branches: [main]
+  pull_request: {}
+  workflow_dispatch: {}
+
+jobs:
+  betterleaks-scan:
+    name: Scan for Secrets
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          # Still important: Fetch history so 'git mode' works
+          fetch-depth: 0
+
+      - name: Run Betterleaks
+        # Ensure the workflow doesn't stop short when secrets are uncovered
+        continue-on-error: true
+        uses: dortort/betterleaks-action@v0.1.0
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          verbose: 'true'
+          redact: 'true'
+          # Default behaviors generate 'betterleaks-report.sarif' out-of-the-box
+
+      - name: Upload to DefectDojo
+        if: always() # Guarantees execution even if secrets are identified
+        run: |
+          curl -X POST "${{ secrets.DEFECT_DOJO_URL }}/api/v2/import-scan/" \
+          -H "Authorization: Token ${{ secrets.DEFECT_DOJO_API_KEY }}" \
+          -H "Content-Type: multipart/form-data" \
+          -F "active=true" \
+          -F "verified=true" \
+          -F "scan_type=SARIF" \
+          -F "engagement=3" \
+          -F "file=@betterleaks-report.sarif" \
+          -F "close_old_findings=true" \
+          -F "push_to_jira=false"
