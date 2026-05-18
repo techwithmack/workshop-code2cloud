@@ -17,7 +17,7 @@ jobs:
       - name: Run Trivy Scan
         # We use 'continue-on-error' so the workflow doesn't stop if vulnerabilities are found
         continue-on-error: true
-        uses: aquasecurity/trivy-action@v0.36.0
+        uses: aquasecurity/trivy-action@18f259c25ff3cd300285ec6697d8c3e2f5ec38ec # v0.36.0
         with:
           scan-type: 'fs'
           scan-ref: '.'
