@@ -29,3 +29,6 @@ test/e2e/videos/
 
 # ignore Snyk Code scanner files
 .dccache
+
+# ignore Trivy scan output (can contain secrets it finds)
+trivy.json
