@@ -27,6 +27,7 @@ jobs:
             release-assets.githubusercontent.com:443
             objects.githubusercontent.com:443
             get.trivy.dev:443
+            mirror.gcr.io:443
             defectdojo.aikidoctf.com:443
 
       - name: Checkout code
