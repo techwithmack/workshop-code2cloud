@@ -24,6 +24,8 @@ jobs:
             auth.docker.io:443
             ghcr.io:443
             pkg-containers.githubusercontent.com:443
+            release-assets.githubusercontent.com:443
+            objects.githubusercontent.com:443
             defectdojo.aikidoctf.com:443
 
       - name: Checkout code
