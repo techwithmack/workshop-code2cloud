@@ -11,13 +11,28 @@ jobs:
     name: Scan Dependencies
     runs-on: ubuntu-latest
     steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@v2
+        with:
+          egress-policy: block
+          allowed-endpoints: >
+            github.com:443
+            api.github.com:443
+            raw.githubusercontent.com:443
+            index.docker.io:443
+            registry-1.docker.io:443
+            auth.docker.io:443
+            ghcr.io:443
+            pkg-containers.githubusercontent.com:443
+            defectdojo.aikidoctf.com:443
+
       - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Run Trivy Scan
         # We use 'continue-on-error' so the workflow doesn't stop if vulnerabilities are found
         continue-on-error: true
-        uses: aquasecurity/trivy-action@18f259c25ff3cd300285ec6697d8c3e2f5ec38ec # v0.36.0
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           scan-type: 'fs'
           scan-ref: '.'

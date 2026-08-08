@@ -11,6 +11,17 @@ jobs:
     name: Scan for Secrets
     runs-on: ubuntu-latest
     steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@v2
+        with:
+          egress-policy: block
+          allowed-endpoints: >
+            github.com:443
+            api.github.com:443
+            raw.githubusercontent.com:443
+            objects.githubusercontent.com:443
+            defectdojo.aikidoctf.com:443
+
       - name: Checkout code
         uses: actions/checkout@v4
         with:
